@@ -1,0 +1,43 @@
+# 🎯 Tactical CV Project GitIgnore
+
+# --- Byte-compiled / optimized / DLL files ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# --- OS Specific ---
+.DS_Store
+Thumbs.db
+
+# --- Python Environment ---
+.venv/
+env/
+venv/
+ENV/
+
+# --- IDEs ---
+.vscode/
+.idea/
+
+# --- DATASET & WEIGHTS (CRITICAL: DO NOT REMOVE) ---
+# We ignore the entire dataset folder because 27k images will break GitHub
+dataset/**
+!dataset/README.md
+
+
+# Ignore all weights and large results
+*.pt
+*.onnx
+*.engine
+results/**/weights/
+runs//
+
+# --- Kaggle & Output Logs ---
+*.log
+*.ipynb_checkpoints/
+.kaggle/
+
+# --- Sampling Outputs ---
+sampling/output/*
+!sampling/output/.gitkeep
