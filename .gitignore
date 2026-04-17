@@ -21,9 +21,10 @@ ENV/
 .idea/
 
 # --- DATASET & WEIGHTS (CRITICAL: DO NOT REMOVE) ---
-# We ignore the entire dataset folder because 27k images will break GitHub
+# Ignore all files in dataset folder
 dataset/**
-!dataset/README.md
+# Allow README.md files so folders are tracked on GitHub
+!dataset/**/README.md
 
 
 # Ignore all weights and large results
