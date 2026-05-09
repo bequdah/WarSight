@@ -25,7 +25,7 @@ results/
 │   ├── exp2/
 │   └── exp3/
 │
-└── yolov11/
+└── yolov26/
     ├── exp1/
     ├── exp2/
     └── exp3/

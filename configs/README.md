@@ -1,6 +1,6 @@
 # 📌 Configurations Folder
 
-This folder contains all configuration files that will be used for training experiments on YOLOv8 and YOLOv11 models.
+This folder contains all configuration files that will be used for training experiments on YOLOv8 and YOLOv26 models.
 
 At this stage, no experiments have been executed yet. The purpose of this folder is to prepare a structured and reproducible setup for future training runs.
 
@@ -16,7 +16,7 @@ We use configuration files to:
 
 The folder is organized as follows:
 - `yolov8/` → configurations for YOLOv8 experiments
-- `yolov11/` → configurations for YOLOv11 experiments
+- `yolov26/` → configurations for YOLOv26 experiments
 
 Each model will have multiple experiment files (e.g., `exp1.yaml`, `exp2.yaml`, `exp3.yaml`).
 
@@ -29,7 +29,7 @@ Each model will be tested using 3 configurations:
 - **exp2** → improved hyperparameters
 - **exp3** → imbalance-aware settings
 
-### YOLOv11
+### YOLOv26
 - **exp1** → baseline configuration
 - **exp2** → tuned hyperparameters
 - **exp3** → enhanced training setup

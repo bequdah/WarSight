@@ -6,7 +6,7 @@ This folder contains everything related to **measuring and comparing model perfo
 
 ## 📌 Purpose
 
-- Compare results between YOLOv8 and YOLOv11 experiments
+- Compare results between YOLOv8 and YOLOv26 experiments
 - Calculate standard detection metrics (mAP, Precision, Recall)
 - Generate comparison charts and summary tables
 

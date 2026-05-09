@@ -28,7 +28,7 @@ model.load()
 detections = model.predict(image)
 ```
 
-If tomorrow we switch to YOLOv11, we only change `"yolov8"` → `"yolov11"`. **Nothing else in the project changes.**
+If tomorrow we switch to YOLOv26, we only change `"yolov8"` → `"yolov26"`. **Nothing else in the project changes.**
 
 ## 📂 Folder Structure
 
@@ -41,8 +41,8 @@ models/
 ├── YOLOv8/
 │   └── yolov8_detector.py    # YOLOv8 translator to the unified interface
 │
-├── YOLOv11/
-│   └── yolov11_detector.py   # YOLOv11 translator to the unified interface
+├── YOLOv26/
+│   └── yolov26_detector.py   # YOLOv26 translator to the unified interface
 │
 ├── custom/
 │   └── post_processor.py     # Extra logic (drawing, filtering, JSON conversion)
@@ -70,7 +70,7 @@ configs/ → training/ → results/ → models/ → app.py
 from models.model_factory import load_model
 from models.custom.post_processor import PostProcessor
 
-# Load the model (swap "yolov8" ↔ "yolov11" anytime)
+# Load the model (swap "yolov8" ↔ "yolov26" anytime)
 model = load_model("yolov8", "weights/best.pt", conf_threshold=0.5)
 model.load()
 

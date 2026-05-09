@@ -28,7 +28,7 @@ def load_model(model_type: str, model_path: str, conf_threshold: float = 0.5) ->
     إنشاء وإرجاع الموديل المناسب.
     
     Args:
-        model_type: نوع الموديل - "yolov8" أو "yolov11"
+        model_type: نوع الموديل - "yolov8" أو "yolov26"
         model_path: مسار ملف الأوزان (.pt)
         conf_threshold: الحد الأدنى للثقة (افتراضي 0.5)
         
@@ -46,12 +46,12 @@ def load_model(model_type: str, model_path: str, conf_threshold: float = 0.5) ->
         from models.YOLOv8.yolov8_detector import YOLOv8Detector
         return YOLOv8Detector(model_path, conf_threshold)
 
-    elif model_type in ("yolov11", "v11"):
-        from models.YOLOv11.yolov11_detector import YOLOv11Detector
-        return YOLOv11Detector(model_path, conf_threshold)
+    elif model_type in ("yolov26", "v26"):
+        from models.YOLOv26.yolov26_detector import YOLOv26Detector
+        return YOLOv26Detector(model_path, conf_threshold)
 
     else:
-        available = ["yolov8", "yolov11"]
+        available = ["yolov8", "yolov26"]
         raise ValueError(
             f"Unknown model type: '{model_type}'. "
             f"Available options: {available}"
@@ -62,4 +62,4 @@ def get_available_models() -> list:
     """
     إرجاع قائمة بالموديلات المتاحة في المشروع.
     """
-    return ["yolov8", "yolov11"]
+    return ["yolov8", "yolov26"]

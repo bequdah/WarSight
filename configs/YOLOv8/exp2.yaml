@@ -1,0 +1,6 @@
+# Experiment 2: Preprocessed Data (Baseline Parameters)
+epochs: 100
+imgsz: 640
+batch: 16
+device: 0
+patience: 50

@@ -33,7 +33,7 @@ templates = Jinja2Templates(directory="app/templates")
 # --- إعدادات الموديل ---
 DEFAULT_MODEL_TYPE = "yolov8"
 DEFAULT_WEIGHTS = os.path.abspath(os.path.join(
-    os.path.dirname(__file__), '..', 'results', 'YOLOv8', 'exp3', 'best.pt'
+    os.path.dirname(__file__), '..', 'results', 'YOLOv8', 'exp2', 'best.pt'
 ))
 
 model_instance = None

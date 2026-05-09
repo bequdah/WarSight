@@ -1,7 +1,7 @@
 """
 Base Model Interface - "الدستور" الموحد للمشروع
 
-هذا الملف بحدد القوانين اللي أي موديل (v8 أو v11) لازم يتبعها.
+هذا الملف بحدد القوانين اللي أي موديل (v8 أو v26) لازم يتبعها.
 أي موديل جديد بدنا نضيفه للمشروع لازم يرث من هذه الكلاس
 ويطبق نفس الدوال.
 
@@ -17,7 +17,7 @@ class BaseDetectionModel(ABC):
     """
     الواجهة الموحدة (Unified Interface) لكل مودلز الـ Detection.
     
-    أي موديل (YOLOv8, YOLOv11, أو غيرهم) لازم يرث من هاي الكلاس
+    أي موديل (YOLOv8, YOLOv26, أو غيرهم) لازم يرث من هاي الكلاس
     ويطبق الدوال المطلوبة.
     """
 
@@ -40,12 +40,13 @@ class BaseDetectionModel(ABC):
         pass
 
     @abstractmethod
-    def predict(self, image: np.ndarray) -> List[Dict[str, Any]]:
+    def predict(self, image: np.ndarray, conf: float = None) -> List[Dict[str, Any]]:
         """
         تنفيذ الـ Detection على صورة معينة.
         
         Args:
             image: الصورة كـ NumPy array (BGR format من OpenCV)
+            conf: الحد الأدنى للثقة (اختياري، إذا لم يتم تمريره يستخدم conf_threshold الخاص بالموديل)
             
         Returns:
             قائمة من النتائج، كل نتيجة عبارة عن dict فيه:

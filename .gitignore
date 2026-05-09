@@ -31,6 +31,7 @@ dataset/**
 *.pt
 *.onnx
 *.engine
+!results/**/best.pt
 results/**/weights/
 runs//
 

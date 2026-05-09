@@ -6,6 +6,7 @@ from pathlib import Path
 from tqdm import tqdm
 from multiprocessing import Pool, cpu_count
 import math
+import shutil
 
 # --- Configuration ---
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -23,10 +24,20 @@ TARGET_MID = 2000
 TARGET_MAX = 4000
 EXCLUDED_CLASSES = {8}
 
+# الخريطة الجديدة للترقيم المتسلسل (0-12)
+REMAP_MAP = {
+    0: 0, 1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 7,
+    9: 8,   # Missile-Launcher -> 8
+    10: 9,  # Radar -> 9
+    11: 10, # Soldier -> 10
+    12: 11, # Tank -> 11
+    13: 12  # Handgun -> 12
+}
+
 CLASS_NAMES = {
-    0: "Artillery", 1: "Camouflaged-Solder", 2: "Civilian", 3: "Drone",
+    0: "Artillery", 1: "Camouflaged-Soldier", 2: "Civilian", 3: "Drone",
     4: "Helicopter", 5: "Jet-Fighters", 6: "Machine-Gun", 7: "Military-Truck",
-    9: "Missile-Launcher", 10: "Radar", 11: "Soldier", 12: "Tank", 13: "Handgun",
+    8: "Missile-Launcher", 9: "Radar", 10: "Soldier", 11: "Tank", 12: "Handgun",
 }
 
 def polygon_area(pts):
@@ -108,10 +119,14 @@ def save_datapoint(img, labels, base_name, suffix, split_dir, allow_empty=False)
         if is_success: im_buf_arr.tofile(str(img_path))
         with open(lbl_path, "w", encoding="utf-8") as f:
             for lbl in labels:
-                cls = int(lbl[0])
-                if cls in EXCLUDED_CLASSES: continue
+                old_cls = int(lbl[0])
+                if old_cls in EXCLUDED_CLASSES: continue
+                
+                # تطبيق الترقيم الجديد
+                new_cls = REMAP_MAP.get(old_cls, old_cls)
+                
                 coords = np.clip(lbl[1:], 0.0, 1.0)
-                f.write(f"{cls} " + " ".join(f"{v:.6f}" for v in coords) + "\n")
+                f.write(f"{new_cls} " + " ".join(f"{v:.6f}" for v in coords) + "\n")
     except Exception as e:
         print(f"[WARN] Skip write error on {img_path}: {e}")
 
@@ -182,16 +197,21 @@ def post_process_cleanup():
                     parts = line.strip().split()
                     if len(parts) != 9:
                         changed = True; continue
-                    cls = int(parts[0])
+                    old_cls = int(parts[0])
                     coords = np.array([float(v) for v in parts[1:]])
                     if np.any(coords < 0.0) or np.any(coords > 1.0):
                         coords = np.clip(coords, 0.0, 1.0); changed = True
-                    if cls in EXCLUDED_CLASSES:
+                    if old_cls in EXCLUDED_CLASSES:
                         changed = True; continue
+                    
+                    # تطبيق الترقيم الجديد في الـ cleanup أيضاً
+                    new_cls = REMAP_MAP.get(old_cls, old_cls)
+                    if new_cls != old_cls: changed = True
+
                     pts = coords.reshape(4, 2) * 640
                     if polygon_area(pts) < 4.0:
                         changed = True; continue
-                    keep_lines.append(f"{cls} " + " ".join(f"{v:.6f}" for v in coords))
+                    keep_lines.append(f"{new_cls} " + " ".join(f"{v:.6f}" for v in coords))
                 if changed:
                     with open(f, "w", encoding="utf-8") as out:
                         out.write("\n".join(keep_lines) + ("\n" if keep_lines else ""))
@@ -239,13 +259,38 @@ def main():
     task_args = [(p, i, dyn_config, allowed_stems) for i, p in enumerate(all_images)]
     with Pool(max(1, cpu_count() // 2)) as pool:
         list(tqdm(pool.imap_unordered(process_single_image, task_args), total=len(all_images), desc="Augmenting"))
+
+    print("\nCopying validation and test sets...")
+    for split in ["val", "test"]:
+        split_src_img = SOURCE_DIR / split / "images"
+        split_src_lbl = SOURCE_DIR / split / "labels"
+        
+        if not split_src_img.exists():
+            continue
+            
+        files = list(split_src_img.glob("*"))
+        for img_p in tqdm(files, desc=f"Processing {split}", leave=False):
+            safe_name = safe_stem(img_p.stem)
+            # Use original extension or force jpg? save_datapoint uses jpg.
+            # To be safe and consistent with train, we copy but keep the naming safe.
+            target_img = OUTPUT_DIR / split / "images" / f"{safe_name}{img_p.suffix}"
+            shutil.copy(str(img_p), str(target_img))
+            
+            lbl_p = split_src_lbl / f"{img_p.stem}.txt"
+            if lbl_p.exists():
+                target_lbl = OUTPUT_DIR / split / "labels" / f"{safe_name}.txt"
+                shutil.copy(str(lbl_p), str(target_lbl))
+
     print("\nRunning post-process cleanup...")
     post_process_cleanup()
-    nc = max(CLASS_NAMES.keys()) + 1
-    names_list = [CLASS_NAMES.get(i, "Excluded") for i in range(nc)]
+    
+    # تحديث الـ YAML بالعدد الصحيح (13) والأسماء المتسلسلة
+    nc = len(CLASS_NAMES)
+    names_list = [CLASS_NAMES[i] for i in range(nc)]
+    
     with open(OUTPUT_DIR / "data.yaml", "w") as f:
         f.write(f"path: {OUTPUT_DIR.as_posix()}\ntrain: train/images\nval: val/images\ntest: test/images\nnc: {nc}\nnames: {names_list}\n")
-    print(f"\n✅ Done! Dataset ready at: {OUTPUT_DIR}")
+    print(f"\n✅ Done! Dataset ready at: {OUTPUT_DIR} with {nc} sequential classes.")
 
 if __name__ == "__main__":
     main()
