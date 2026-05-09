@@ -1,10 +1,13 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Iron Eye System - Tactical HUD</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Share+Tech+Mono&display=swap"
+        rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -20,7 +23,6 @@
             overflow-x: hidden;
         }
 
-        /* === SCAN LINES OVERLAY === */
         body::before {
             content: '';
             position: fixed;
@@ -28,18 +30,11 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: repeating-linear-gradient(
-                0deg,
-                transparent,
-                transparent 2px,
-                rgba(0, 255, 136, 0.015) 2px,
-                rgba(0, 255, 136, 0.015) 4px
-            );
+            background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 255, 136, 0.015) 2px, rgba(0, 255, 136, 0.015) 4px);
             pointer-events: none;
             z-index: 9999;
         }
 
-        /* === HEADER === */
         .header {
             background: linear-gradient(180deg, rgba(0, 255, 136, 0.08) 0%, transparent 100%);
             border-bottom: 1px solid rgba(0, 255, 136, 0.3);
@@ -68,8 +63,15 @@
         }
 
         @keyframes pulse-glow {
-            0%, 100% { box-shadow: 0 0 5px rgba(0, 255, 136, 0.3); }
-            50% { box-shadow: 0 0 20px rgba(0, 255, 136, 0.6); }
+
+            0%,
+            100% {
+                box-shadow: 0 0 5px rgba(0, 255, 136, 0.3);
+            }
+
+            50% {
+                box-shadow: 0 0 20px rgba(0, 255, 136, 0.6);
+            }
         }
 
         .system-title {
@@ -80,6 +82,7 @@
             text-transform: uppercase;
             background: linear-gradient(90deg, #00ff88, #00ccff);
             -webkit-background-clip: text;
+            background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
@@ -112,8 +115,15 @@
         }
 
         @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.3; }
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.3;
+            }
         }
 
         .clock {
@@ -122,16 +132,27 @@
             color: #00ccff;
         }
 
-        /* === MAIN LAYOUT === */
+        /* LAYOUT */
         .main-container {
             display: grid;
-            grid-template-columns: 1fr 320px;
+            grid-template-columns: 320px 1fr;
+            direction: ltr;
             gap: 20px;
             padding: 20px 30px;
             height: calc(100vh - 85px);
         }
 
-        /* === IMAGE VIEWPORT === */
+        .sidebar {
+            direction: rtl;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            min-height: 0;
+        }
+
+        /* VIEWPORT */
         .viewport {
             background: #0d1220;
             border: 1px solid rgba(0, 255, 136, 0.2);
@@ -141,27 +162,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-        }
-
-        .viewport::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            border: 1px solid rgba(0, 255, 136, 0.1);
-            border-radius: 8px;
-            pointer-events: none;
-        }
-
-        /* Corner brackets */
-        .viewport::after {
-            content: '';
-            position: absolute;
-            top: 10px; left: 10px; right: 10px; bottom: 10px;
-            border: 1px solid rgba(0, 255, 136, 0.08);
-            pointer-events: none;
+            direction: ltr;
         }
 
         .corner {
@@ -172,10 +173,30 @@
             border-style: solid;
             z-index: 10;
         }
-        .corner.tl { top: 8px; left: 8px; border-width: 2px 0 0 2px; }
-        .corner.tr { top: 8px; right: 8px; border-width: 2px 2px 0 0; }
-        .corner.bl { bottom: 8px; left: 8px; border-width: 0 0 2px 2px; }
-        .corner.br { bottom: 8px; right: 8px; border-width: 0 2px 2px 0; }
+
+        .corner.tl {
+            top: 8px;
+            left: 8px;
+            border-width: 2px 0 0 2px;
+        }
+
+        .corner.tr {
+            top: 8px;
+            right: 8px;
+            border-width: 2px 2px 0 0;
+        }
+
+        .corner.bl {
+            bottom: 8px;
+            left: 8px;
+            border-width: 0 0 2px 2px;
+        }
+
+        .corner.br {
+            bottom: 8px;
+            right: 8px;
+            border-width: 0 2px 2px 0;
+        }
 
         .viewport-label {
             position: absolute;
@@ -187,7 +208,7 @@
             z-index: 10;
         }
 
-        /* === UPLOAD ZONE === */
+        /* UPLOAD ZONE */
         .upload-zone {
             display: flex;
             flex-direction: column;
@@ -238,25 +259,96 @@
             cursor: pointer;
         }
 
-        .result-image {
+        /* IMAGE + VIDEO — نفس الـ style */
+        .result-image,
+        .result-video {
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
             height: 100%;
             object-fit: contain;
             display: none;
-            z-index: 5;
+            z-index: 3;
+            background: #0a0e17;
         }
 
-        /* === SIDEBAR === */
-        .sidebar {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            overflow-y: auto;
-            overflow-x: hidden;
-            min-height: 0;
-            padding-right: 4px;
+        /* نخلي controls الفيديو تظهر */
+        .result-video::-webkit-media-controls {
+            z-index: 30;
         }
 
+        /* HOVER BOX */
+        #hoverBox {
+            position: absolute;
+            display: none;
+            border: 2px solid #00ccff;
+            box-shadow: 0 0 15px rgba(0, 204, 255, 0.5), inset 0 0 10px rgba(0, 204, 255, 0.15);
+            pointer-events: none;
+            z-index: 20;
+            transition: left .04s, top .04s, width .04s, height .04s;
+        }
+
+        #hoverBox::before {
+            content: '';
+            position: absolute;
+            top: -5px;
+            left: -5px;
+            width: 10px;
+            height: 10px;
+            border-top: 2px solid #00ccff;
+            border-left: 2px solid #00ccff;
+        }
+
+        #hoverBox::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            right: -5px;
+            width: 10px;
+            height: 10px;
+            border-bottom: 2px solid #00ccff;
+            border-right: 2px solid #00ccff;
+        }
+
+        /* TOOLTIP */
+        #tacticalTooltip {
+            position: fixed;
+            display: none;
+            background: rgba(10, 20, 30, 0.95);
+            border: 1px solid #00ccff;
+            color: white;
+            padding: 10px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 12px;
+            z-index: 10000;
+            pointer-events: none;
+            box-shadow: 0 0 15px rgba(0, 204, 255, 0.4);
+            clip-path: polygon(0 0, 100% 0, 100% 85%, 85% 100%, 0 100%);
+            min-width: 170px;
+        }
+
+        /* VIDEO READY BADGE */
+        #videoBadge {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 255, 136, 0.15);
+            border: 1px solid #00ff88;
+            color: #00ff88;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 11px;
+            letter-spacing: 2px;
+            padding: 8px 20px;
+            border-radius: 4px;
+            z-index: 30;
+            display: none;
+            white-space: nowrap;
+            animation: pulse-glow 2s ease-in-out infinite;
+        }
+
+        /* PANELS */
         .panel {
             background: rgba(13, 18, 32, 0.9);
             border: 1px solid rgba(0, 255, 136, 0.15);
@@ -297,7 +389,6 @@
             padding: 15px;
         }
 
-        /* === CONFIDENCE SLIDER === */
         .slider-container {
             display: flex;
             flex-direction: column;
@@ -317,6 +408,7 @@
 
         input[type="range"] {
             -webkit-appearance: none;
+            appearance: none;
             width: 100%;
             height: 4px;
             background: rgba(0, 255, 136, 0.15);
@@ -324,80 +416,59 @@
             outline: none;
         }
 
-        /* === SWITCH STYLE === */
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #00ff88;
+            cursor: pointer;
+        }
+
         .switch {
             position: relative;
             display: inline-block;
             width: 50px;
             height: 24px;
         }
-        .switch input { opacity: 0; width: 0; height: 0; }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
         .slider-switch {
             position: absolute;
             cursor: pointer;
-            top: 0; left: 0; right: 0; bottom: 0;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
             background-color: rgba(0, 255, 136, 0.1);
             transition: .4s;
             border-radius: 24px;
             border: 1px solid rgba(0, 255, 136, 0.3);
         }
+
         .slider-switch:before {
             position: absolute;
             content: "";
-            height: 16px; width: 16px;
-            left: 3px; bottom: 3px;
+            height: 16px;
+            width: 16px;
+            left: 3px;
+            bottom: 3px;
             background-color: #00ff88;
             transition: .4s;
             border-radius: 50%;
         }
-        input:checked + .slider-switch { background-color: rgba(0, 255, 136, 0.3); }
-        input:checked + .slider-switch:before { transform: translateX(26px); }
 
-        /* === TOOLTIP === */
-        #tacticalTooltip {
-            position: fixed;
-            background: rgba(10, 14, 23, 0.9);
-            border: 1px solid #00ff88;
-            color: #00ff88;
-            padding: 8px 12px;
-            font-size: 11px;
-            font-family: 'Orbitron', sans-serif;
-            pointer-events: none;
-            z-index: 1000;
-            display: none;
-            box-shadow: 0 0 15px rgba(0, 255, 136, 0.3);
-            border-left: 4px solid #00ff88;
+        input:checked+.slider-switch {
+            background-color: rgba(0, 255, 136, 0.3);
         }
 
-        /* === HOVER BOX === */
-        #hoverBox {
-            position: absolute;
-            border: 2px solid #00ccff;
-            box-shadow: 0 0 15px rgba(0, 204, 255, 0.5), inset 0 0 10px rgba(0, 204, 255, 0.2);
-            pointer-events: none;
-            z-index: 4; /* Below high overlays but above image */
-            display: none;
-            transition: all 0.05s linear;
-        }
-        #hoverBox::before {
-            content: '';
-            position: absolute;
-            top: -5px; left: -5px; width: 10px; height: 10px;
-            border-top: 2px solid #00ccff; border-left: 2px solid #00ccff;
-        }
-        #hoverBox::after {
-            content: '';
-            position: absolute;
-            bottom: -5px; right: -5px; width: 10px; height: 10px;
-            border-bottom: 2px solid #00ccff; border-right: 2px solid #00ccff;
-        }
-
-        .result-image {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            display: none;
-            z-index: 3;
+        input:checked+.slider-switch:before {
+            transform: translateX(26px);
         }
 
         .scan-btn {
@@ -425,6 +496,7 @@
         .scan-btn:disabled {
             opacity: 0.4;
             cursor: not-allowed;
+            transform: none;
         }
 
         .scan-btn.scanning {
@@ -432,40 +504,19 @@
         }
 
         @keyframes scan-pulse {
-            0%, 100% { border-color: rgba(0, 255, 136, 0.4); }
-            50% { border-color: rgba(0, 204, 255, 0.8); box-shadow: 0 0 40px rgba(0, 204, 255, 0.3); }
+
+            0%,
+            100% {
+                border-color: rgba(0, 255, 136, 0.4);
+            }
+
+            50% {
+                border-color: rgba(0, 204, 255, 0.8);
+                box-shadow: 0 0 40px rgba(0, 204, 255, 0.3);
+            }
         }
 
-        /* === STATS === */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-
-        .stat-card {
-            background: rgba(0, 255, 136, 0.04);
-            border: 1px solid rgba(0, 255, 136, 0.1);
-            border-radius: 6px;
-            padding: 12px;
-            text-align: center;
-        }
-
-        .stat-value {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 24px;
-            font-weight: 900;
-            color: #00ff88;
-        }
-
-        .stat-label {
-            font-size: 10px;
-            color: rgba(0, 255, 136, 0.5);
-            letter-spacing: 1px;
-            margin-top: 4px;
-        }
-
-        /* === HEAT ZONE === */
+        /* HEAT ZONE */
         .heatzone-wrapper {
             flex: 1;
             min-height: 0;
@@ -536,7 +587,6 @@
             color: #00ff88;
         }
 
-        /* === EMPTY STATE === */
         .empty-state {
             text-align: center;
             padding: 20px;
@@ -544,17 +594,20 @@
             font-size: 12px;
         }
 
-        /* === LOADING OVERLAY === */
+        /* LOADING */
         .loading-overlay {
             position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(10, 14, 23, 0.85);
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(8, 12, 20, 0.92);
             display: none;
-            align-items: center;
-            justify-content: center;
             flex-direction: column;
-            gap: 20px;
+            justify-content: center;
+            align-items: center;
             z-index: 100;
+            backdrop-filter: blur(6px);
         }
 
         .loading-overlay.active {
@@ -572,7 +625,8 @@
         .radar-scanner::before {
             content: '';
             position: absolute;
-            top: 50%; left: 50%;
+            top: 50%;
+            left: 50%;
             width: 50%;
             height: 2px;
             background: linear-gradient(90deg, #00ff88, transparent);
@@ -581,32 +635,80 @@
         }
 
         @keyframes radar-spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
         }
 
         .loading-text {
             font-family: 'Orbitron', sans-serif;
             font-size: 12px;
             letter-spacing: 3px;
+            margin-top: 16px;
             animation: blink 1s ease-in-out infinite;
         }
 
-        /* === SCROLLBAR === */
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(0, 255, 136, 0.3); border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(0, 255, 136, 0.6); }
+        .progress-container {
+            width: 280px;
+            margin-top: 16px;
+            display: none;
+        }
 
-        /* Hidden file input */
-        #fileInput { display: none; }
+        .progress-track {
+            width: 100%;
+            height: 4px;
+            background: rgba(0, 255, 136, 0.1);
+            border-radius: 2px;
+            overflow: hidden;
+            border: 1px solid rgba(0, 255, 136, 0.2);
+        }
 
-        /* Hidden file input */
-        #fileInput { display: none; }
+        .progress-bar {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, #00ff88, #00ccff);
+            box-shadow: 0 0 10px #00ff88;
+            transition: width 0.4s ease;
+        }
+
+        .progress-label {
+            text-align: center;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 11px;
+            color: #00ccff;
+            margin-top: 6px;
+            letter-spacing: 2px;
+        }
+
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 255, 136, 0.3);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 255, 136, 0.6);
+        }
+
+        #fileInput {
+            display: none;
+        }
     </style>
 </head>
+
 <body>
-    <!-- HEADER -->
+
     <header class="header">
         <div class="header-left">
             <div class="logo-icon">🦅</div>
@@ -624,39 +726,10 @@
         </div>
     </header>
 
-    <!-- MAIN -->
     <div class="main-container">
-        <!-- IMAGE VIEWPORT -->
-        <div class="viewport" id="viewport">
-            <div class="corner tl"></div>
-            <div class="corner tr"></div>
-            <div class="corner bl"></div>
-            <div class="corner br"></div>
-            <div class="viewport-label">THERMAL FEED</div>
-
-            <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
-                <div class="upload-icon">📡</div>
-                <div class="upload-text">
-                    اسحب الصورة الحرارية هنا<br>
-                    أو <span>اختر ملف</span>
-                </div>
-            </div>
-
-            <img class="result-image" id="resultImage" alt="Analyzed Image">
-            <div id="hoverBox"></div>
-            <div id="tacticalTooltip"></div>
-
-            <div class="loading-overlay" id="loadingOverlay">
-                <div class="radar-scanner"></div>
-                <div class="loading-text">SCANNING TARGETS...</div>
-            </div>
-
-            <input type="file" id="fileInput" accept="image/*">
-        </div>
 
         <!-- SIDEBAR -->
         <div class="sidebar">
-            <!-- Controls -->
             <div class="panel">
                 <div class="panel-header">⚙ Control Panel</div>
                 <div class="panel-body">
@@ -685,9 +758,6 @@
                 </div>
             </div>
 
-
-
-            <!-- Heat Zone -->
             <div class="panel detections-panel">
                 <div class="panel-header">🌡 Heat Zone Map</div>
                 <div class="panel-body">
@@ -696,9 +766,15 @@
                             <canvas id="heatCanvas"></canvas>
                         </div>
                         <div class="heatzone-legend">
-                            <div class="legend-item"><div class="legend-dot" style="background:#00ff88"></div> Low</div>
-                            <div class="legend-item"><div class="legend-dot" style="background:#ffaa00"></div> Medium</div>
-                            <div class="legend-item"><div class="legend-dot" style="background:#ff4444"></div> High</div>
+                            <div class="legend-item">
+                                <div class="legend-dot" style="background:#00ff88"></div> Low
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-dot" style="background:#ffaa00"></div> Medium
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-dot" style="background:#ff4444"></div> High
+                            </div>
                         </div>
                         <div class="class-summary" id="classSummary">
                             <div class="empty-state" style="width:100%">AWAITING SCAN DATA</div>
@@ -707,164 +783,258 @@
                 </div>
             </div>
         </div>
+
+        <!-- VIEWPORT -->
+        <div class="viewport" id="viewport">
+            <div class="corner tl"></div>
+            <div class="corner tr"></div>
+            <div class="corner bl"></div>
+            <div class="corner br"></div>
+            <div class="viewport-label" id="viewportLabel">TACTICAL FEED</div>
+
+            <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+                <div class="upload-icon">📡</div>
+                <div class="upload-text">
+                    اسحب صورة أو فيديو هنا<br>
+                    أو <span>اختر ملف</span>
+                </div>
+            </div>
+
+            <img class="result-image" id="resultImage" alt="Analyzed Image">
+            <video class="result-video" id="resultVideo" loop playsinline></video>
+
+            <div id="hoverBox"></div>
+            <div id="videoBadge">✓ TACTICAL VIDEO READY — PLAYING</div>
+
+            <div class="loading-overlay" id="loadingOverlay">
+                <div class="radar-scanner"></div>
+                <div class="loading-text" id="loadingText">SCANNING TARGETS...</div>
+                <div class="progress-container" id="progressContainer">
+                    <div class="progress-track">
+                        <div class="progress-bar" id="progressBar"></div>
+                    </div>
+                    <div class="progress-label" id="progressLabel">0%</div>
+                </div>
+            </div>
+
+            <input type="file" id="fileInput" accept="image/*,video/*">
+        </div>
+
     </div>
 
+    <div id="tacticalTooltip"></div>
+
     <script>
-        // === CLOCK ===
-        function updateClock() {
-            const now = new Date();
-            document.getElementById('clock').textContent = now.toLocaleTimeString('en-US', { hour12: false });
-        }
-        setInterval(updateClock, 1000);
-        updateClock();
+        // ════════════════════════════════════════
+        //  CLOCK
+        // ════════════════════════════════════════
+        setInterval(() => {
+            document.getElementById('clock').textContent =
+                new Date().toLocaleTimeString('en-US', { hour12: false });
+        }, 1000);
+        document.getElementById('clock').textContent =
+            new Date().toLocaleTimeString('en-US', { hour12: false });
 
-        // === CONFIDENCE SLIDER ===
-        const confSlider = document.getElementById('confSlider');
-        const confValue = document.getElementById('confValue');
-        confSlider.addEventListener('input', () => {
-            confValue.textContent = parseFloat(confSlider.value).toFixed(2);
-        });
-
-        // === FILE HANDLING ===
+        // ════════════════════════════════════════
+        //  ELEMENTS
+        // ════════════════════════════════════════
         const fileInput = document.getElementById('fileInput');
         const uploadZone = document.getElementById('uploadZone');
         const resultImage = document.getElementById('resultImage');
+        const resultVideo = document.getElementById('resultVideo');
         const scanBtn = document.getElementById('scanBtn');
-        let selectedFile = null;
-
-        fileInput.addEventListener('change', (e) => {
-            if (e.target.files.length > 0) {
-                selectedFile = e.target.files[0];
-                previewImage(selectedFile);
-            }
-        });
-
-        // Drag & Drop
         const viewport = document.getElementById('viewport');
-        viewport.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadZone.classList.add('dragover');
-        });
-        viewport.addEventListener('dragleave', () => {
-            uploadZone.classList.remove('dragover');
-        });
-        viewport.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadZone.classList.remove('dragover');
-            if (e.dataTransfer.files.length > 0) {
-                selectedFile = e.dataTransfer.files[0];
-                previewImage(selectedFile);
-            }
-        });
+        const confSlider = document.getElementById('confSlider');
+        const confValue = document.getElementById('confValue');
+        const modeToggle = document.getElementById('modeToggle');
+        const modeStatus = document.getElementById('modeStatus');
+        const tacticalTooltip = document.getElementById('tacticalTooltip');
+        const hoverBox = document.getElementById('hoverBox');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const videoBadge = document.getElementById('videoBadge');
+        const viewportLabel = document.getElementById('viewportLabel');
 
-        function previewImage(file) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                resultImage.src = e.target.result;
-                resultImage.style.display = 'block';
-                uploadZone.style.display = 'none';
-                scanBtn.disabled = false;
-            };
-            reader.readAsDataURL(file);
-        }
-
-        // === DATA REPOSITORY ===
+        // ════════════════════════════════════════
+        //  STATE
+        // ════════════════════════════════════════
+        let selectedFile = null;
+        let isVideo = false;
         let currentDetections = [];
         let originalImgData = null;
         let annotatedImgData = null;
         let isIntelligenceMode = false;
 
-        const modeToggle = document.getElementById('modeToggle');
-        const modeStatus = document.getElementById('modeStatus');
-        const tacticalTooltip = document.getElementById('tacticalTooltip');
-        const hoverBox = document.getElementById('hoverBox');
+        // ════════════════════════════════════════
+        //  SLIDER
+        // ════════════════════════════════════════
+        confSlider.addEventListener('input', () => {
+            confValue.textContent = parseFloat(confSlider.value).toFixed(2);
+        });
 
+        // ════════════════════════════════════════
+        //  MODE TOGGLE
+        // ════════════════════════════════════════
         modeToggle.addEventListener('change', () => {
             isIntelligenceMode = modeToggle.checked;
             modeStatus.textContent = isIntelligenceMode ? 'ON' : 'OFF';
             modeStatus.style.color = isIntelligenceMode ? '#00ccff' : '#00ff88';
-            if (!isIntelligenceMode) hoverBox.style.display = 'none';
+            if (!isIntelligenceMode) {
+                hoverBox.style.display = 'none';
+                tacticalTooltip.style.display = 'none';
+            }
             updateDisplayMode();
         });
 
         function updateDisplayMode() {
-            if (!originalImgData || !annotatedImgData) return;
-            resultImage.src = 'data:image/png;base64,' + (isIntelligenceMode ? originalImgData : annotatedImgData);
+            if (isVideo || !originalImgData || !annotatedImgData) return;
+            resultImage.src = 'data:image/jpeg;base64,' +
+                (isIntelligenceMode ? originalImgData : annotatedImgData);
         }
 
-        // Mouse Hover Logic
-        resultImage.addEventListener('mousemove', (e) => {
-            if (!isIntelligenceMode || currentDetections.length === 0) {
-                tacticalTooltip.style.display = 'none';
-                hoverBox.style.display = 'none';
-                return;
+        // ════════════════════════════════════════
+        //  FILE HANDLING
+        // ════════════════════════════════════════
+        function handleFile(file) {
+            selectedFile = file;
+            isVideo = file.type.startsWith('video/');
+            videoBadge.style.display = 'none';
+            currentDetections = [];
+            originalImgData = null;
+            annotatedImgData = null;
+
+            viewportLabel.textContent = isVideo ? 'VIDEO FEED' : 'TACTICAL FEED';
+            uploadZone.style.display = 'none';
+
+            if (isVideo) {
+                resultImage.style.display = 'none';
+                resultVideo.style.display = 'block';
+                resultVideo.src = URL.createObjectURL(file);
+                resultVideo.muted = true;
+                resultVideo.controls = false;
+                resultVideo.play().catch(() => { });
+            } else {
+                resultVideo.pause();
+                resultVideo.style.display = 'none';
+                const reader = new FileReader();
+                reader.onload = e => {
+                    resultImage.src = e.target.result;
+                    resultImage.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
             }
+            scanBtn.disabled = false;
+        }
 
-            const rect = resultImage.getBoundingClientRect();
-            
-            // Calculate actual image display dimensions (accounting for object-fit: contain)
-            const ratio = Math.min(rect.width / resultImage.naturalWidth, rect.height / resultImage.naturalHeight);
-            const actualImgWidth = resultImage.naturalWidth * ratio;
-            const actualImgHeight = resultImage.naturalHeight * ratio;
-            const offsetX = (rect.width - actualImgWidth) / 2;
-            const offsetY = (rect.height - actualImgHeight) / 2;
-
-            // Mouse position relative to the resultImage element
-            const mouseX = e.clientX - rect.left;
-            const mouseY = e.clientY - rect.top;
-
-            // Scale mouse coordinates to match original image dimensions
-            const imgX = (mouseX - offsetX) / ratio;
-            const imgY = (mouseY - offsetY) / ratio;
-
-            let found = false;
-            for (const det of currentDetections) {
-                const [x1, y1, x2, y2] = det.bbox;
-                if (imgX >= x1 && imgX <= x2 && imgY >= y1 && imgY <= y2) {
-                    // Update Tooltip
-                    tacticalTooltip.innerHTML = `
-                        <div style="color:#00ccff; border-bottom:1px solid rgba(0,204,255,0.3); padding-bottom:4px; margin-bottom:4px;">TARGET ACQUIRED</div>
-                        CLASS: ${det.class.toUpperCase()}<br>
-                        CONF: ${(det.confidence * 100).toFixed(1)}%<br>
-                        COORD: [${Math.round(imgX)}, ${Math.round(imgY)}]
-                    `;
-                    tacticalTooltip.style.display = 'block';
-                    tacticalTooltip.style.left = (e.clientX + 15) + 'px';
-                    tacticalTooltip.style.top = (e.clientY + 15) + 'px';
-
-                    // Update Hover Box (relative to viewport/parent)
-                    hoverBox.style.width = (x2 - x1) * ratio + 'px';
-                    hoverBox.style.height = (y2 - y1) * ratio + 'px';
-                    hoverBox.style.left = (x1 * ratio + offsetX) + 'px';
-                    hoverBox.style.top = (y1 * ratio + offsetY) + 'px';
-                    hoverBox.style.display = 'block';
-
-                    found = true;
-                    break;
-                }
-            }
-
-            if (!found) {
-                tacticalTooltip.style.display = 'none';
-                hoverBox.style.display = 'none';
-            }
+        fileInput.addEventListener('change', e => {
+            if (e.target.files[0]) handleFile(e.target.files[0]);
         });
-
-        resultImage.addEventListener('mouseleave', () => {
-            tacticalTooltip.style.display = 'none';
-            hoverBox.style.display = 'none';
+        viewport.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+        viewport.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+        viewport.addEventListener('drop', e => {
+            e.preventDefault(); uploadZone.classList.remove('dragover');
+            if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
         });
+        resultImage.addEventListener('click', () => fileInput.click());
 
-        // === ANALYZE ===
+        // ════════════════════════════════════════
+        //  ANALYZE — router
+        // ════════════════════════════════════════
         async function analyzeImage() {
             if (!selectedFile) return;
+            isVideo ? startOfflineVideoAnalysis() : performSingleAnalysis();
+        }
 
-            const loadingOverlay = document.getElementById('loadingOverlay');
+        // ════════════════════════════════════════
+        //  VIDEO ANALYSIS
+        // ════════════════════════════════════════
+        async function startOfflineVideoAnalysis() {
+            const loadingText = document.getElementById('loadingText');
+            const progressContainer = document.getElementById('progressContainer');
+            const progressBar = document.getElementById('progressBar');
+            const progressLabel = document.getElementById('progressLabel');
+
             loadingOverlay.classList.add('active');
+            loadingText.textContent = 'OFFLINE TACTICAL PROCESSING...';
+            progressContainer.style.display = 'block';
+            progressBar.style.width = '0%';
+            progressLabel.textContent = '0%';
             scanBtn.classList.add('scanning');
             scanBtn.disabled = true;
 
-            const startTime = performance.now();
+            const sessionID = 'proc_' + Date.now();
+            const formData = new FormData();
+            formData.append('video', selectedFile);
+            formData.append('confidence', confSlider.value);
+
+            // Polling للتقدم
+            const statusInterval = setInterval(async () => {
+                try {
+                    const res = await fetch(`/video-status/${sessionID}`);
+                    const status = await res.json();
+                    const pct = Math.min(status.percent || 0, 99);
+                    progressBar.style.width = pct + '%';
+                    progressLabel.textContent = pct + '%';
+                } catch (e) { }
+            }, 800);
+
+            try {
+                const response = await fetch('/analyze-video?session_id=' + sessionID, {
+                    method: 'POST', body: formData
+                });
+                const data = await response.json();
+                if (data.status === 'started' || data.status === 'success') {
+                    const finalVideoUrl = data.video_url;
+                    const trackID = data.session_id || sessionID;
+
+                    const checkCompletion = setInterval(async () => {
+                        try {
+                            const res = await fetch(`/video-status/${trackID}`);
+                            const status = await res.json();
+                            if (status.percent >= 0) {
+                                progressBar.style.width = status.percent + '%';
+                                progressLabel.textContent = status.percent + '%';
+                            }
+                            if (status.percent >= 100) {
+                                clearInterval(checkCompletion);
+                                clearInterval(statusInterval);
+                                resultVideo.src = finalVideoUrl + '?t=' + Date.now();
+                                resultVideo.style.display = 'block';
+                                resultImage.style.display = 'none';
+                                resultVideo.load();
+                                resultVideo.play().catch(() => {});
+                                viewportLabel.textContent = '✓ PROCESSED TACTICAL FEED';
+                                videoBadge.style.display = 'block';
+                                loadingOverlay.classList.remove('active');
+                                scanBtn.classList.remove('scanning');
+                                scanBtn.disabled = false;
+                            }
+                        } catch(e) {}
+                    }, 1000);
+                } else {
+                    alert('Video Processing Failed: ' + (data.error || 'Unknown'));
+                    loadingOverlay.classList.remove('active');
+                    scanBtn.classList.remove('scanning');
+                    scanBtn.disabled = false;
+                    clearInterval(statusInterval);
+                }
+
+            } catch (e) {
+                clearInterval(statusInterval);
+                console.error('[IronEye] Video error:', e);
+                alert('Tactical Analysis Failed: ' + e.message);
+                loadingOverlay.classList.remove('active');
+                scanBtn.classList.remove('scanning');
+                scanBtn.disabled = false;
+            }
+        }
+
+        // ════════════════════════════════════════
+        //  IMAGE ANALYSIS
+        // ════════════════════════════════════════
+        async function performSingleAnalysis() {
+            loadingOverlay.classList.add('active');
+            scanBtn.classList.add('scanning');
+            scanBtn.disabled = true;
 
             const formData = new FormData();
             formData.append('image', selectedFile);
@@ -874,37 +1044,19 @@
                 const response = await fetch('/analyze', { method: 'POST', body: formData });
                 const data = await response.json();
 
-                const endTime = performance.now();
-                const scanTime = ((endTime - startTime) / 1000).toFixed(1);
-
-                // Update Data
-                currentDetections = data.detections;
-                originalImgData = data.original_image;
-                annotatedImgData = data.image;
-
-                // Update image based on mode
-                updateDisplayMode();
-
-                // Update stats
-                // document.getElementById('totalTargets').textContent = data.total_targets;
-                // document.getElementById('imgSize').textContent = data.image_size;
-                // document.getElementById('scanTime').textContent = scanTime + 's';
-
-                // Calculate average confidence
-                if (data.detections.length > 0) {
-                    const avgConfidence = data.detections.reduce((sum, d) => sum + d.confidence, 0) / data.detections.length;
-                    // document.getElementById('avgConf').textContent = (avgConfidence * 100).toFixed(0) + '%';
-                } else {
-                    // document.getElementById('avgConf').textContent = '--';
+                if (data.detections) {
+                    currentDetections = data.detections;
+                    originalImgData = data.original_image;
+                    annotatedImgData = data.image;
+                    if (currentDetections.length > 0)
+                        console.log('[IronEye] Detection sample:', JSON.stringify(currentDetections[0], null, 2));
+                    updateDisplayMode();
+                    drawHeatZone(data.detections, data.image_size);
+                    updateClassSummary(data.class_counts);
                 }
-
-                // Update heat zone & class summary
-                drawHeatZone(data.detections, data.image_size);
-                updateClassSummary(data.class_counts);
-
-            } catch (error) {
-                console.error('Analysis failed:', error);
-                alert('خطأ في التحليل: ' + error.message);
+            } catch (e) {
+                console.error(e);
+                alert('Tactical Analysis Failed: ' + e.message);
             } finally {
                 loadingOverlay.classList.remove('active');
                 scanBtn.classList.remove('scanning');
@@ -912,86 +1064,132 @@
             }
         }
 
+        // ════════════════════════════════════════
+        //  LETTERBOX HELPER
+        // ════════════════════════════════════════
+        function getLetterbox(el) {
+            const rect = el.getBoundingClientRect();
+            const nW = el.naturalWidth || el.videoWidth;
+            const nH = el.naturalHeight || el.videoHeight;
+            if (!nW || !nH) return null;
+            const cR = rect.width / rect.height;
+            const iR = nW / nH;
+            let rW, rH, ox, oy;
+            if (iR > cR) { rW = rect.width; rH = rect.width / iR; ox = 0; oy = (rect.height - rH) / 2; }
+            else { rH = rect.height; rW = rect.height * iR; oy = 0; ox = (rect.width - rW) / 2; }
+            return { renderedW: rW, renderedH: rH, ox, oy, scaleX: nW / rW, scaleY: nH / rH, rect };
+        }
+
+        // ════════════════════════════════════════
+        //  checkHit + raycast
+        // ════════════════════════════════════════
+        function checkHit(cX, cY, bbox, el) {
+            const lb = getLetterbox(el);
+            if (!lb) return { hit: false };
+            const mx = cX - lb.rect.left - lb.ox;
+            const my = cY - lb.rect.top - lb.oy;
+            if (mx < 0 || mx > lb.renderedW || my < 0 || my > lb.renderedH) return { hit: false };
+            return { hit: raycast(mx * lb.scaleX, my * lb.scaleY, bbox) };
+        }
+
+        function raycast(px, py, bbox) {
+            const pts = [];
+            for (let i = 0; i < bbox.length; i += 2) pts.push({ x: bbox[i], y: bbox[i + 1] });
+            if (pts.length === 2) return px >= pts[0].x && px <= pts[1].x && py >= pts[0].y && py <= pts[1].y;
+            let inside = false; const n = pts.length;
+            for (let i = 0, j = n - 1; i < n; j = i++) {
+                const { x: xi, y: yi } = pts[i], { x: xj, y: yj } = pts[j];
+                if ((yi > py) !== (yj > py) && px < (xj - xi) * (py - yi) / (yj - yi) + xi) inside = !inside;
+            }
+            return inside;
+        }
+
+        function getBBoxScreenRect(bbox, el) {
+            const lb = getLetterbox(el); if (!lb) return null;
+            const vp = viewport.getBoundingClientRect();
+            const dx = lb.rect.left - vp.left, dy = lb.rect.top - vp.top;
+            const sX = x => dx + lb.ox + x / lb.scaleX;
+            const sY = y => dy + lb.oy + y / lb.scaleY;
+            const xs = bbox.filter((_, i) => i % 2 === 0).map(sX);
+            const ys = bbox.filter((_, i) => i % 2 !== 0).map(sY);
+            return { left: Math.min(...xs), top: Math.min(...ys), width: Math.max(...xs) - Math.min(...xs), height: Math.max(...ys) - Math.min(...ys) };
+        }
+
+        // ════════════════════════════════════════
+        //  MOUSE HOVER
+        // ════════════════════════════════════════
+        viewport.addEventListener('mousemove', e => {
+            const el = isVideo ? resultVideo : resultImage;
+            if (!isIntelligenceMode || !currentDetections.length || el.style.display === 'none') {
+                tacticalTooltip.style.display = 'none'; hoverBox.style.display = 'none'; return;
+            }
+            let matched = null;
+            for (const det of currentDetections) {
+                if (checkHit(e.clientX, e.clientY, det.bbox, el).hit) { matched = det; break; }
+            }
+            if (!matched) { tacticalTooltip.style.display = 'none'; hoverBox.style.display = 'none'; return; }
+
+            const tid = matched.track_id != null ? ` #${matched.track_id}` : '';
+            const cls = (matched.class_name ?? matched.class ?? matched.label ?? 'UNKNOWN').toString().toUpperCase();
+            const conf = matched.confidence ?? matched.conf ?? 0;
+            const c = matched.bbox || [];
+
+            tacticalTooltip.innerHTML = `
+        <div style="color:#00ccff;border-bottom:1px solid rgba(0,204,255,.3);padding-bottom:4px;margin-bottom:6px;font-family:'Orbitron',sans-serif;letter-spacing:2px;font-size:10px;">▶ TARGET${tid} ACQUIRED</div>
+        <div><span style="color:rgba(0,255,136,0.6)">TYPE </span>${cls}</div>
+        <div><span style="color:rgba(0,255,136,0.6)">CONF </span><span style="color:#00ccff">${(conf * 100).toFixed(1)}%</span></div>
+        <div><span style="color:rgba(0,255,136,0.6)">POS  </span>[${Math.round(c[0] ?? 0)}, ${Math.round(c[1] ?? 0)}]</div>
+    `;
+            const ttW = 175, ttH = 95;
+            tacticalTooltip.style.left = (e.clientX + 18 + ttW > window.innerWidth ? e.clientX - ttW - 10 : e.clientX + 18) + 'px';
+            tacticalTooltip.style.top = (e.clientY + 18 + ttH > window.innerHeight ? e.clientY - ttH - 10 : e.clientY + 18) + 'px';
+            tacticalTooltip.style.display = 'block';
+
+            const sr = getBBoxScreenRect(matched.bbox, el);
+            if (sr) {
+                hoverBox.style.left = sr.left + 'px'; hoverBox.style.top = sr.top + 'px';
+                hoverBox.style.width = sr.width + 'px'; hoverBox.style.height = sr.height + 'px';
+                hoverBox.style.display = 'block';
+            }
+        });
+        viewport.addEventListener('mouseleave', () => {
+            tacticalTooltip.style.display = 'none'; hoverBox.style.display = 'none';
+        });
+
+        // ════════════════════════════════════════
+        //  HEAT ZONE
+        // ════════════════════════════════════════
         function drawHeatZone(detections, imgSize) {
             const canvas = document.getElementById('heatCanvas');
-            const container = canvas.parentElement;
-            canvas.width = container.offsetWidth;
-            canvas.height = container.offsetHeight;
+            const cont = canvas.parentElement;
+            canvas.width = cont.offsetWidth; canvas.height = cont.offsetHeight;
             const ctx = canvas.getContext('2d');
-
-            // Clear canvas
-            ctx.fillStyle = '#080c14';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // Draw grid
-            ctx.strokeStyle = 'rgba(0, 255, 136, 0.06)';
-            ctx.lineWidth = 0.5;
-            for (let i = 0; i < canvas.width; i += 20) {
-                ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); ctx.stroke();
-            }
-            for (let i = 0; i < canvas.height; i += 20) {
-                ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(canvas.width, i); ctx.stroke();
-            }
-
-            if (detections.length === 0) return;
-
-            // Parse image dimensions
-            const [imgW, imgH] = imgSize.split('x').map(Number);
-            const scaleX = canvas.width / imgW;
-            const scaleY = canvas.height / imgH;
-
-            // Draw heat zones as radial gradients
+            ctx.fillStyle = '#080c14'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            if (!detections?.length || !imgSize?.includes('x')) return;
+            const [iW, iH] = imgSize.split('x').map(Number);
+            const sx = canvas.width / iW, sy = canvas.height / iH;
             detections.forEach(det => {
-                const [x1, y1, x2, y2] = det.bbox;
-                const cx = ((x1 + x2) / 2) * scaleX;
-                const cy = ((y1 + y2) / 2) * scaleY;
-                const radius = Math.max((x2 - x1) * scaleX, (y2 - y1) * scaleY) * 1.2;
+                const c = det.bbox; let cx, cy, r;
+                if (c.length === 8) { cx = (c[0] + c[2] + c[4] + c[6]) / 4 * sx; cy = (c[1] + c[3] + c[5] + c[7]) / 4 * sy; r = Math.max(Math.abs(c[4] - c[0]) * sx, Math.abs(c[5] - c[1]) * sy) * 0.8; }
+                else { cx = (c[0] + c[2]) / 2 * sx; cy = (c[1] + c[3]) / 2 * sy; r = Math.max((c[2] - c[0]) * sx, (c[3] - c[1]) * sy) * 0.6; }
+                if (r <= 0) r = 10;
                 const conf = det.confidence;
-
-                // Color based on confidence
-                let r, g, b;
-                if (conf >= 0.7) { r = 255; g = 68; b = 68; }        // High - Red
-                else if (conf >= 0.4) { r = 255; g = 170; b = 0; }   // Medium - Orange
-                else { r = 0; g = 255; b = 136; }                     // Low - Green
-
-                const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
-                gradient.addColorStop(0, `rgba(${r}, ${g}, ${b}, 0.6)`);
-                gradient.addColorStop(0.5, `rgba(${r}, ${g}, ${b}, 0.2)`);
-                gradient.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0)`);
-
-                ctx.fillStyle = gradient;
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-                // Draw center crosshair
-                ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 0.8)`;
-                ctx.lineWidth = 1;
-                ctx.beginPath();
-                ctx.moveTo(cx - 5, cy); ctx.lineTo(cx + 5, cy);
-                ctx.moveTo(cx, cy - 5); ctx.lineTo(cx, cy + 5);
-                ctx.stroke();
+                const [rv, gv, bv] = conf >= 0.7 ? [255, 68, 68] : conf >= 0.4 ? [255, 170, 0] : [0, 255, 136];
+                const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+                g.addColorStop(0, `rgba(${rv},${gv},${bv},0.6)`); g.addColorStop(1, `rgba(${rv},${gv},${bv},0)`);
+                ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
             });
-
-            // Border glow
-            ctx.strokeStyle = 'rgba(0, 255, 136, 0.2)';
-            ctx.lineWidth = 1;
-            ctx.strokeRect(0, 0, canvas.width, canvas.height);
         }
 
+        // ════════════════════════════════════════
+        //  CLASS SUMMARY
+        // ════════════════════════════════════════
         function updateClassSummary(classCounts) {
-            const summary = document.getElementById('classSummary');
-            if (!classCounts || Object.keys(classCounts).length === 0) {
-                summary.innerHTML = '<div class="empty-state" style="width:100%">NO TARGETS</div>';
-                return;
-            }
-            summary.innerHTML = Object.entries(classCounts).map(([cls, count]) => {
-                return `<div class="class-tag"><span>${cls.toUpperCase()}</span><span class="class-tag-count">${count}</span></div>`;
-            }).join('');
+            const s = document.getElementById('classSummary');
+            if (!classCounts || !Object.keys(classCounts).length) { s.innerHTML = '<div class="empty-state" style="width:100%">NO TARGETS</div>'; return; }
+            s.innerHTML = Object.entries(classCounts).map(([cls, n]) => `<div class="class-tag"><span>${cls.toUpperCase()}</span><span class="class-tag-count">${n}</span></div>`).join('');
         }
-
-        // === RE-UPLOAD (click on result image) ===
-        resultImage.addEventListener('click', () => {
-            document.getElementById('fileInput').click();
-        });
     </script>
 </body>
+
 </html>

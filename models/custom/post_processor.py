@@ -1,79 +1,106 @@
 """
-Custom Model Extensions - "البهارات الإضافية"
+Custom Model Extensions - "Tactical Post-Processor"
 
-هون بنحط أي منطق custom بدنا نضيفه فوق الموديل العادي.
-مثال: بعد ما الموديل بلاقي "دبابة"، بدنا نرسم حواليها
-خط أحمر وبدنا نحسب مساحتها.
-هذا المنطق مش موجود بـ YOLO الأصلي، هو خاص فينا.
+هذا الملف مسؤول عن تحويل نتائج الموديل الخام إلى بيانات تكتيكية منظمة.
+تم تحديثه ليدعم الـ OBB (Oriented Bounding Boxes).
 """
 
 import numpy as np
 import cv2
 from typing import List, Dict, Any
-from models.custom.iff_system import IFFSystem
 
 
 class PostProcessor:
     """
     معالجة النتائج بعد الـ Detection (Post-Processing).
+    يدعم الصناديق المائلة (OBB) والمستطيلة العادية.
     """
 
-    def identify_targets(self, detections: List[Dict]) -> List[Dict]:
-        """استدعاء نظام تمييز الهوية السيادي."""
-        return IFFSystem.identify_targets(detections)
+    COLOR_DEFAULT = (0, 255, 136)  # اللون الأخضر التكتيكي
 
     def draw_detections(self, image: np.ndarray, detections: List[Dict[str, Any]]) -> np.ndarray:
         """
-        رسم النتائج مع نظام الألوان التكتيكي (IFF Mapping).
+        رسم النتائج المائلة (OBB) على الصورة بسماكة خطوط عالية ووضوح تكتيكي.
         """
         img = image.copy()
         
-        # تفعيل طبقة تحديد الهوية
-        detections = self.identify_targets(detections)
-
         for det in detections:
-            x1, y1, x2, y2 = [int(c) for c in det['bbox']]
-            class_name = det['class_name']
-            identity = det.get('identity', 'Unknown')
-            color = det.get('color', IFFSystem.COLOR_DEFAULT)
+            # توحيد أسماء الأسلحة للرسم
+            original_name = det['class_name'].lower()
+            if 'gun' in original_name or 'pistol' in original_name or 'rifle' in original_name:
+                class_display_name = "GUN"
+            else:
+                class_display_name = det['class_name'].upper()
 
-            # رسم المستطيل التكتيكي
-            cv2.rectangle(img, (x1, y1), (x2, y2), color, 2)
+            confidence = det['confidence']
+            color = self.COLOR_DEFAULT
+            
+            # التحقق إذا كانت الإحداثيات OBB (8 نقاط) أو مستطيل عادي (4 نقاط)
+            coords = det.get('bbox', [])
+            
+            if len(coords) == 8:
+                # رسم OBB (صندوق مائل) بسماكة أكبر (3)
+                pts = np.array(coords).reshape((-1, 1, 2)).astype(np.int32)
+                cv2.polylines(img, [pts], isClosed=True, color=color, thickness=3)
+                # نستخدم أول نقطة لكتابة النص
+                tx, ty = int(coords[0]), int(coords[1])
+            elif len(coords) == 4:
+                # رسم مستطيل عادي بسماكة أكبر (3)
+                x1, y1, x2, y2 = [int(c) for c in coords]
+                cv2.rectangle(img, (x1, y1), (x2, y2), color, 3)
+                tx, ty = x1, y1
+            else:
+                continue
 
-            # كتابة التقرير التكتيكي فوق الهدف
-            label = f"{class_name} [{identity}]"
-            cv2.putText(img, label, (x1, y1 - 10),
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+            # --- إعداد الملصق التكتيكي ---
+            track_id = det.get('track_id')
+            track_txt = f"#{track_id} " if track_id is not None else ""
+            label = f"{track_txt}{class_display_name} {confidence:.2f}"
+            
+            font = cv2.FONT_HERSHEY_SIMPLEX
+            font_scale = 0.7  # حجم أكبر
+            font_thickness = 2
+            
+            # حساب حجم النص لعمل خلفية
+            (text_w, text_h), baseline = cv2.getTextSize(label, font, font_scale, font_thickness)
+            
+            # رسم مستطيل خلفية للنص لزيادة التباين (HUD Style)
+            cv2.rectangle(img, (tx, ty - text_h - 15), (tx + text_w + 5, ty), color, -1)
+            
+            # رسم النص باللون الأسود فوق الخلفية الخضراء للوضوح
+            cv2.putText(img, label, (tx + 2, ty - 7), font, font_scale, (0, 0, 0), font_thickness)
 
         return img
 
-    def filter_by_class(self, detections: List[Dict], target_classes: List[str]) -> List[Dict]:
-        """
-        فلترة وإرجاع كلاسات معينة فقط.
-        مثلاً: "عطيني الدبابات بس".
-        """
-        return [d for d in detections if d['class_name'] in target_classes]
-
     def filter_by_confidence(self, detections: List[Dict], min_conf: float) -> List[Dict]:
-        """
-        فلترة وإرجاع النتائج اللي فوق نسبة ثقة معينة.
-        """
+        """فلترة النتائج بناءً على الحد الأدنى للثقة."""
         return [d for d in detections if d['confidence'] >= min_conf]
 
-    def to_json(self, detections: List[Dict]) -> List[Dict]:
+    def format_for_hud(self, detections: List[Dict]) -> List[Dict]:
         """
-        تحويل النتائج لصيغة تقرير أمني (Security Report Format).
+        تنسيق النتائج لتناسب واجهة الـ HUD (index.html).
         """
-        return [
-            {
-                'target_type': d['class_name'],
-                'confidence': round(d['confidence'] * 100, 1),
-                'identity': d.get('identity', 'Unknown'),
-                'threat_assessment': d.get('threat_level', 'LOW'),
-                'coordinates': {
-                    'x1': int(d['bbox'][0]), 'y1': int(d['bbox'][1]),
-                    'x2': int(d['bbox'][2]), 'y2': int(d['bbox'][3])
-                }
-            }
-            for d in detections
-        ]
+        formatted = []
+        for d in detections:
+            original_name = d['class_name'].lower()
+            if 'gun' in original_name or 'pistol' in original_name or 'rifle' in original_name:
+                class_display_name = "GUN"
+            else:
+                class_display_name = d['class_name']
+
+            coords = d['bbox']
+            if len(coords) == 8:
+                cx = sum(coords[0::2]) / 4
+                cy = sum(coords[1::2]) / 4
+            else:
+                cx = (coords[0] + coords[2]) / 2
+                cy = (coords[1] + coords[3]) / 2
+
+            formatted.append({
+                'class_name': class_display_name,
+                'confidence': round(d['confidence'], 3),
+                'bbox': coords,
+                'center': [round(cx, 1), round(cy, 1)],
+                'track_id': d.get('track_id')
+            })
+        return formatted

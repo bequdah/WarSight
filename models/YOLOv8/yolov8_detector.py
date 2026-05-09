@@ -41,25 +41,61 @@ class YOLOv8Detector(BaseDetectionModel):
             print(f"[YOLOv8] Failed to load model: {e}")
             raise
 
-    def predict(self, image: np.ndarray) -> List[Dict[str, Any]]:
+    def predict(self, image: np.ndarray, conf: float = None) -> List[Dict[str, Any]]:
         """
-        تنفيذ الـ Detection على الصورة وإرجاع النتائج بالصيغة الموحدة.
+        رصد كلاسيكي للصور الثابتة (بدون تتبع).
+        """
+        return self._inference(image, conf=conf, track=False)
+
+    def track(self, image: np.ndarray, conf: float = None) -> List[Dict[str, Any]]:
+        """
+        رصد مع تتبع مستمر (التتبع يحتاج persist=True ليحافظ على الـ IDs).
+        يستخدم في حلقات الفيديو.
+        """
+        return self._inference(image, conf=conf, track=True)
+
+    def _inference(self, image: np.ndarray, conf: float = None, track: bool = False) -> List[Dict[str, Any]]:
+        """
+        محرك الاستدلال الداخلي.
         """
         if not self.is_loaded():
             raise RuntimeError("Model not loaded. Call load() first.")
 
-        results = self.model(image, conf=self.conf_threshold, verbose=False)
-        detections = []
+        threshold = conf if conf is not None else self.conf_threshold
+        
+        if track:
+            # استخدام ByteTrack مع الحفاظ على الحالة عبر الفريمات
+            results = self.model.track(image, conf=threshold, persist=True, tracker="bytetrack.yaml", verbose=False)
+        else:
+            results = self.model(image, conf=threshold, verbose=False)
 
+        detections = []
         for result in results:
-            for box in result.boxes:
-                class_id = int(box.cls[0])
-                detections.append({
-                    'class_id': class_id,
-                    'class_name': result.names[class_id],
-                    'confidence': float(box.conf[0]),
-                    'bbox': box.xyxy[0].tolist()  # [x1, y1, x2, y2]
-                })
+            if hasattr(result, 'obb') and result.obb is not None:
+                for box in result.obb:
+                    class_id = int(box.cls[0])
+                    # الحصول على الـ ID إذا كان التتبع مفعلاً
+                    track_id = int(box.id[0]) if box.id is not None else None
+                    
+                    points = box.xyxyxyxy[0].cpu().numpy().reshape(-1).tolist()
+                    detections.append({
+                        'class_id': class_id,
+                        'class_name': result.names[class_id],
+                        'confidence': float(box.conf[0]),
+                        'bbox': points,
+                        'track_id': track_id
+                    })
+            elif hasattr(result, 'boxes'):
+                for box in result.boxes:
+                    class_id = int(box.cls[0])
+                    track_id = int(box.id[0]) if box.id is not None else None
+                    detections.append({
+                        'class_id': class_id,
+                        'class_name': result.names[class_id],
+                        'confidence': float(box.conf[0]),
+                        'bbox': box.xyxy[0].tolist(),
+                        'track_id': track_id
+                    })
 
         return detections
 

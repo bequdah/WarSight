@@ -1,102 +1,180 @@
 import os
 import io
 import base64
-import json
-from datetime import datetime
-from flask import Flask, render_template, request, jsonify
-from ultralytics import YOLO
-from PIL import Image
+import sys
 import numpy as np
+from datetime import datetime
+from fastapi import FastAPI, File, UploadFile, Form, Request, Query, BackgroundTasks
+from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+from PIL import Image
+import uvicorn
+import tempfile
+import cv2
 
-app = Flask(__name__)
-app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max
+# إضافة المسار الرئيسي للمشروع
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-# تحميل الموديل مرة واحدة عند بدء التشغيل
-MODEL_PATH = 'weight/best.pt'
-model = None
+from models.model_factory import load_model
+from models.custom.post_processor import PostProcessor
 
-def load_model():
-    global model
-    if os.path.exists(MODEL_PATH):
-        model = YOLO(MODEL_PATH)
-        print(f"✅ تم تحميل الموديل من: {MODEL_PATH}")
-    else:
-        print(f"❌ لم يتم العثور على الموديل في: {MODEL_PATH}")
+# إنشاء مجلد للمخرجات بمسار مطلق
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+OUTPUT_DIR = os.path.join(BASE_DIR, "results", "video_output")
+os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-@app.route('/')
-def index():
-    return render_template('index.html')
+app = FastAPI(title="Iron Eye Tactical System")
+app.mount("/outputs", StaticFiles(directory=OUTPUT_DIR), name="outputs")
 
-@app.route('/analyze', methods=['POST'])
-def analyze():
-    if model is None:
-        return jsonify({'error': 'الموديل غير محمل'}), 500
+# إعداد القوالب (Templates)
+templates = Jinja2Templates(directory="app/templates")
 
-    if 'image' not in request.files:
-        return jsonify({'error': 'لم يتم إرسال صورة'}), 400
+# --- إعدادات الموديل ---
+DEFAULT_MODEL_TYPE = "yolov8"
+DEFAULT_WEIGHTS = os.path.abspath(os.path.join(
+    os.path.dirname(__file__), '..', 'results', 'YOLOv8', 'exp3', 'best.pt'
+))
 
-    file = request.files['image']
-    if file.filename == '':
-        return jsonify({'error': 'لم يتم اختيار ملف'}), 400
+model_instance = None
+post_processor = PostProcessor()
+video_progress = {} # { session_id: percent }
 
-    # قراءة الصورة
-    img_bytes = file.read()
-    img = Image.open(io.BytesIO(img_bytes))
+def get_tactical_model():
+    global model_instance
+    if model_instance is None:
+        if os.path.exists(DEFAULT_WEIGHTS):
+            print(f"[OK] LOADING TACTICAL MODEL: {DEFAULT_WEIGHTS}")
+            model_instance = load_model(DEFAULT_MODEL_TYPE, DEFAULT_WEIGHTS)
+            model_instance.load()
+        else:
+            print(f"[ERROR] WEIGHTS NOT FOUND AT: {DEFAULT_WEIGHTS}")
+    return model_instance
 
-    # تشغيل الرصد
-    conf_threshold = float(request.form.get('confidence', 0.25))
-    results = model.predict(source=img, conf=conf_threshold, verbose=False)
+@app.get("/", response_class=HTMLResponse)
+async def read_index(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
 
-    # استخراج النتائج
-    detections = []
-    for result in results:
-        for box in result.boxes:
-            det = {
-                'class': result.names[int(box.cls[0])],
-                'confidence': round(float(box.conf[0]), 3),
-                'bbox': [round(float(x), 1) for x in box.xyxy[0].tolist()]
-            }
-            detections.append(det)
+@app.post("/analyze")
+async def analyze(
+    image: UploadFile = File(...),
+    confidence: float = Form(0.25)
+):
+    try:
+        model = get_tactical_model()
+        if model is None:
+            return JSONResponse(status_code=500, content={"error": "Tactical Model Offline."})
 
-    # رسم المربعات على الصورة
-    annotated = results[0].plot()
-    # تحويل من BGR إلى RGB
-    annotated_rgb = annotated[..., ::-1]
-    pil_img = Image.fromarray(annotated_rgb)
+        contents = await image.read()
+        img_pil = Image.open(io.BytesIO(contents)).convert("RGB")
+        img_np = np.array(img_pil)
 
-    # تحويل الصورة الأصلية إلى Base64
-    orig_buffered = io.BytesIO()
-    img.save(orig_buffered, format="PNG")
-    orig_base64 = base64.b64encode(orig_buffered.getvalue()).decode('utf-8')
+        raw_detections = model.predict(img_np, conf=confidence)
+        annotated_img = post_processor.draw_detections(img_np, raw_detections)
+        hud_data = post_processor.format_for_hud(raw_detections)
 
-    # تحويل الصورة المُحللة إلى Base64
-    buffered = io.BytesIO()
-    pil_img.save(buffered, format="PNG")
-    img_base64 = base64.b64encode(buffered.getvalue()).decode('utf-8')
+        orig_buf = io.BytesIO()
+        img_pil.save(orig_buf, format="JPEG")
+        orig_base64 = base64.b64encode(orig_buf.getvalue()).decode('utf-8')
 
-    # إحصائيات
-    class_counts = {}
-    for d in detections:
-        cls = d['class']
-        class_counts[cls] = class_counts.get(cls, 0) + 1
+        res_pil = Image.fromarray(annotated_img)
+        res_buf = io.BytesIO()
+        res_pil.save(res_buf, format="JPEG")
+        res_base64 = base64.b64encode(res_buf.getvalue()).decode('utf-8')
 
-    response = {
-        'image': img_base64,
-        'original_image': orig_base64,
-        'detections': detections,
-        'total_targets': len(detections),
-        'class_counts': class_counts,
-        'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-        'image_size': f'{img.width}x{img.height}'
-    }
+        class_counts = {}
+        for d in hud_data:
+            cls = d['class_name']
+            class_counts[cls] = class_counts.get(cls, 0) + 1
 
-    return jsonify(response)
+        return {
+            'image': res_base64,
+            'original_image': orig_base64,
+            'detections': hud_data,
+            'total_targets': len(raw_detections),
+            'class_counts': class_counts,
+            'image_size': f"{img_pil.width}x{img_pil.height}",
+            'timestamp': datetime.now().strftime('%H:%M:%S')
+        }
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
 
-if __name__ == '__main__':
-    load_model()
-    print("\n" + "="*50)
-    print("🦅 IRON EYE SYSTEM - Tactical HUD Active")
-    print("="*50)
-    print("🌐 افتح المتصفح على: http://localhost:5000")
-    print("="*50 + "\n")
-    app.run(debug=True, port=5000)
+def process_video_task(input_path, output_path, session_id, confidence):
+    """المعالج الفعلي للفيديو في الخلفية"""
+    try:
+        model = get_tactical_model()
+        cap = cv2.VideoCapture(input_path)
+        fps = cap.get(cv2.CAP_PROP_FPS) or 30
+        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        
+        # نستخدم WebM لأنه الأكثر توافقاً مع المتصفحات (Chrome/Edge) بدون الحاجة لـ ffmpeg
+        fourcc = cv2.VideoWriter_fourcc(*'VP80') 
+        out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
+
+        video_progress[session_id] = 0
+        frame_idx = 0
+        
+        while cap.isOpened():
+            ret, frame = cap.read()
+            if not ret: break
+            
+            raw_detections = model.track(frame, conf=confidence)
+            annotated_frame = post_processor.draw_detections(frame, raw_detections)
+            out.write(annotated_frame)
+            
+            frame_idx += 1
+            if frame_idx % 2 == 0:
+                percent = int((frame_idx / total_frames) * 100)
+                video_progress[session_id] = min(percent, 99)
+        
+        cap.release()
+        out.release()
+        try: os.unlink(input_path)
+        except: pass
+        
+        video_progress[session_id] = 100
+        print(f"\n[DONE] Session {session_id} completed.")
+        
+    except Exception as e:
+        print(f"[CRITICAL] Background Task Error: {e}")
+        video_progress[session_id] = -1
+
+@app.post("/analyze-video")
+async def analyze_video(
+    background_tasks: BackgroundTasks,
+    video: UploadFile = File(...),
+    confidence: float = Form(0.25),
+    session_id: str = Query(None)
+):
+    """استلام الفيديو وبدء المعالجة في الخلفية"""
+    try:
+        track_id = session_id if session_id else f"proc_{datetime.now().timestamp()}"
+        video_progress[track_id] = 0
+        
+        # حفظ الملف المؤقت
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as tmp:
+            tmp.write(await video.read())
+            input_path = tmp.name
+
+        output_filename = f"processed_{track_id}.webm"
+        output_path = os.path.join(OUTPUT_DIR, output_filename)
+        
+        # تشغيل المهمة في الخلفية
+        background_tasks.add_task(process_video_task, input_path, output_path, track_id, confidence)
+        
+        return {
+            'status': 'started',
+            'session_id': track_id,
+            'video_url': f"/outputs/{output_filename}"
+        }
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+@app.get("/video-status/{session_id}")
+async def get_video_status(session_id: str):
+    return {"percent": video_progress.get(session_id, 0)}
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="127.0.0.1", port=5000)
