@@ -11,6 +11,7 @@ YOLOv8 Wrapper - "المترجم" الخاص بـ YOLOv8
 """
 
 import numpy as np
+import cv2
 from typing import List, Dict, Any
 import sys
 import os
@@ -63,11 +64,17 @@ class YOLOv8Detector(BaseDetectionModel):
 
         threshold = conf if conf is not None else self.conf_threshold
         
+        # تصحيح مساحة الألوان: YOLOv8 يتوقع BGR إذا تم تمرير numpy array (نفس طريقة Colab/cv2)
+        if len(image.shape) == 3 and image.shape[2] == 3:
+            model_image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+        else:
+            model_image = image
+        
         if track:
             # استخدام ByteTrack مع الحفاظ على الحالة عبر الفريمات
-            results = self.model.track(image, conf=threshold, persist=True, tracker="bytetrack.yaml", verbose=False)
+            results = self.model.track(model_image, conf=threshold, persist=True, tracker="bytetrack.yaml", verbose=False)
         else:
-            results = self.model(image, conf=threshold, verbose=False)
+            results = self.model(model_image, conf=threshold, verbose=False)
 
         detections = []
         for result in results:

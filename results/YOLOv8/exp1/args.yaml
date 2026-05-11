@@ -12,7 +12,7 @@ save_period: 1
 cache: false
 device: '0'
 workers: 2
-project: /content/drive/MyDrive/military_run
+project: /content/drive/MyDrive/exp1
 name: yolov8n_obb_colab
 exist_ok: true
 pretrained: true
@@ -107,4 +107,4 @@ auto_augment: randaugment
 erasing: 0.4
 cfg: null
 tracker: botsort.yaml
-save_dir: /content/drive/MyDrive/military_run/yolov8n_obb_colab
+save_dir: /content/drive/MyDrive/exp1/yolov8n_obb_colab

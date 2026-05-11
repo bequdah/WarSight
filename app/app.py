@@ -19,13 +19,13 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from models.model_factory import load_model
 from models.custom.post_processor import PostProcessor
 
-# إنشاء مجلد للمخرجات بمسار مطلق
-BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-OUTPUT_DIR = os.path.join(BASE_DIR, "results", "video_output")
+# إنشاء مجلد للمخرجات في مجلد النظام المؤقت (لمنع ازدحام مجلد المشروع)
+OUTPUT_DIR = os.path.join(tempfile.gettempdir(), "warsight_temp_outputs")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-app = FastAPI(title="Iron Eye Tactical System")
+app = FastAPI(title="WarSight Tactical System")
 app.mount("/outputs", StaticFiles(directory=OUTPUT_DIR), name="outputs")
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 # إعداد القوالب (Templates)
 templates = Jinja2Templates(directory="app/templates")
@@ -55,23 +55,90 @@ def get_tactical_model():
 async def read_index(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
-@app.post("/analyze")
-async def analyze(
-    image: UploadFile = File(...),
-    confidence: float = Form(0.25)
-):
+@app.post("/generate-xai")
+async def generate_xai(image: UploadFile = File(...)):
     try:
         model = get_tactical_model()
         if model is None:
-            return JSONResponse(status_code=500, content={"error": "Tactical Model Offline."})
+            return JSONResponse(status_code=500, content={"error": "Model offline."})
+            
+        contents = await image.read()
+        img_pil = Image.open(io.BytesIO(contents)).convert("RGB")
+        img_np = np.array(img_pil)
+        
+        # Use Grad-CAM (precise class-discriminative heatmap)
+        from models.custom.xai_engine import GradCAM
+        xai_engine = GradCAM(model)  # passes the full YOLOv8Detector wrapper
+        
+        # Generate heatmap
+        overlay = xai_engine.generate_heatmap(img_np)
+        
+        # Always remove hooks after use
+        xai_engine.remove_hooks()
+        
+        res_pil = Image.fromarray(overlay)
+        res_buf = io.BytesIO()
+        res_pil.save(res_buf, format="JPEG")
+        res_base64 = base64.b64encode(res_buf.getvalue()).decode('utf-8')
+        
+        return {'image': res_base64}
+    except Exception as e:
+        import traceback
+        print(f"[XAI ERROR] {e}\n{traceback.format_exc()}")
+        return JSONResponse(status_code=500, content={"error": str(e)})
 
+@app.post("/preview")
+async def preview_image(
+    image: UploadFile = File(...),
+    thermal: str = Form("false")
+):
+    try:
+        is_thermal = thermal.lower() == "true"
         contents = await image.read()
         img_pil = Image.open(io.BytesIO(contents)).convert("RGB")
         img_np = np.array(img_pil)
 
+        if is_thermal:
+            import cv2
+            gray = cv2.cvtColor(img_np, cv2.COLOR_RGB2GRAY)
+            thermal_bgr = cv2.applyColorMap(gray, cv2.COLORMAP_INFERNO)
+            img_np = cv2.cvtColor(thermal_bgr, cv2.COLOR_BGR2RGB)
+
+        res_pil = Image.fromarray(img_np)
+        res_buf = io.BytesIO()
+        res_pil.save(res_buf, format="JPEG")
+        res_base64 = base64.b64encode(res_buf.getvalue()).decode('utf-8')
+
+        return {'image': res_base64}
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+@app.post("/analyze")
+async def analyze(
+    image: UploadFile = File(...),
+    confidence: float = Form(0.25),
+    thermal: str = Form("false")
+):
+    try:
+        is_thermal = thermal.lower() == "true"
+        model = get_tactical_model()
+        if model is None:
+            return JSONResponse(status_code=500, content={"error": "Tactical Model Offline."})
+        contents = await image.read()
+        img_pil = Image.open(io.BytesIO(contents)).convert("RGB")
+        img_np = np.array(img_pil)
+
+        if is_thermal:
+            import cv2
+            gray = cv2.cvtColor(img_np, cv2.COLOR_RGB2GRAY)
+            thermal_bgr = cv2.applyColorMap(gray, cv2.COLORMAP_INFERNO)
+            img_np = cv2.cvtColor(thermal_bgr, cv2.COLOR_BGR2RGB)
+
         raw_detections = model.predict(img_np, conf=confidence)
-        annotated_img = post_processor.draw_detections(img_np, raw_detections)
-        hud_data = post_processor.format_for_hud(raw_detections)
+
+        draw_img = img_np.copy()
+        annotated_img = post_processor.draw_detections(draw_img, raw_detections)
+        hud_data = post_processor.format_for_hud(raw_detections, img_np.shape)
 
         orig_buf = io.BytesIO()
         img_pil.save(orig_buf, format="JPEG")
@@ -99,8 +166,9 @@ async def analyze(
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
 
-def process_video_task(input_path, output_path, session_id, confidence):
+def process_video_task(input_path, output_path, session_id, confidence, thermal_str):
     """المعالج الفعلي للفيديو في الخلفية"""
+    is_thermal = thermal_str.lower() == "true"
     try:
         model = get_tactical_model()
         cap = cv2.VideoCapture(input_path)
@@ -120,8 +188,14 @@ def process_video_task(input_path, output_path, session_id, confidence):
             ret, frame = cap.read()
             if not ret: break
             
+            if is_thermal:
+                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                frame = cv2.applyColorMap(gray, cv2.COLORMAP_INFERNO)
+
             raw_detections = model.track(frame, conf=confidence)
-            annotated_frame = post_processor.draw_detections(frame, raw_detections)
+            
+            draw_frame = frame.copy()
+            annotated_frame = post_processor.draw_detections(draw_frame, raw_detections)
             out.write(annotated_frame)
             
             frame_idx += 1
@@ -146,6 +220,7 @@ async def analyze_video(
     background_tasks: BackgroundTasks,
     video: UploadFile = File(...),
     confidence: float = Form(0.25),
+    thermal: str = Form("false"),
     session_id: str = Query(None)
 ):
     """استلام الفيديو وبدء المعالجة في الخلفية"""
@@ -161,8 +236,15 @@ async def analyze_video(
         output_filename = f"processed_{track_id}.webm"
         output_path = os.path.join(OUTPUT_DIR, output_filename)
         
-        # تشغيل المهمة في الخلفية
-        background_tasks.add_task(process_video_task, input_path, output_path, track_id, confidence)
+        # إضافة المهمة لمعالجة الفيديو بالخلفية
+        background_tasks.add_task(
+            process_video_task, 
+            input_path, 
+            output_path, 
+            track_id, 
+            confidence,
+            thermal
+        )
         
         return {
             'status': 'started',

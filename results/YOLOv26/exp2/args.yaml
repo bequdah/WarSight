@@ -1,7 +1,7 @@
 task: obb
 mode: train
 model: /content/yolo26n-obb.pt
-data: /content/data_fixed.yaml
+data: /content/data.yaml
 epochs: 50
 time: null
 patience: 10
@@ -12,7 +12,7 @@ save_period: 1
 cache: false
 device: '0'
 workers: 2
-project: /content/drive/MyDrive/halar
+project: /content/drive/MyDrive/exp2
 name: yolo26n_obb_v2
 exist_ok: true
 pretrained: true
@@ -107,4 +107,4 @@ auto_augment: randaugment
 erasing: 0.4
 cfg: null
 tracker: botsort.yaml
-save_dir: /content/drive/MyDrive/halar/yolo26n_obb_v2
+save_dir: /content/drive/MyDrive/exp2/yolo26n_obb_v2
