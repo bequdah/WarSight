@@ -1,8 +1,8 @@
-# Experiment 1: Baseline (Updated from training logs)
+# Experiment 1: Baseline
 task: obb
 mode: train
 model: yolov8n-obb.pt
-data: dataset/ultradata/data.yaml
+data: dataset/processed/data.yaml
 epochs: 50
 patience: 10
 batch: 4

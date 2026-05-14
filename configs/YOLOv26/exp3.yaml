@@ -1,12 +1,12 @@
-# YOLOv26 Experiment 3: Final Refined (Adam Optimized)
+# YOLOv26 Experiment 3: MuSGD Optimization
 task: obb
 mode: train
 model: yolov26n-obb.pt
 data: dataset/ultradata/data.yaml
 epochs: 50
 patience: 10
-batch: 16
-imgsz: 1024
+batch: 8
+imgsz: 1280
 save: true
 save_period: 1
 cache: false
@@ -16,7 +16,7 @@ project: results/YOLOv26
 name: exp3
 exist_ok: true
 pretrained: true
-optimizer: Adam
+optimizer: MuSGD
 verbose: true
 seed: 0
 deterministic: true
@@ -71,17 +71,17 @@ simplify: true
 opset: null
 workspace: null
 nms: false
-lr0: 0.001
-lrf: 0.1
-momentum: 0.9
+lr0: 0.01
+lrf: 0.001
+momentum: 0.937
 weight_decay: 0.0005
-warmup_epochs: 3.0
+warmup_epochs: 5.0
 warmup_momentum: 0.8
-warmup_bias_lr: 0.01
-box: 8.0
+warmup_bias_lr: 0.1
+box: 7.5
 cls: 1.0
 cls_pw: 0.0
-dfl: 2.0
+dfl: 1.5
 pose: 12.0
 kobj: 1.0
 rle: 1.0
@@ -95,13 +95,13 @@ translate: 0.1
 scale: 0.5
 shear: 0.0
 perspective: 0.0
-flipud: 0.5
+flipud: 0.0
 fliplr: 0.5
 bgr: 0.0
-mosaic: 0.7
+mosaic: 1.0
 mixup: 0.1
 cutmix: 0.0
-copy_paste: 0.0
+copy_paste: 0.1
 copy_paste_mode: flip
 auto_augment: randaugment
 erasing: 0.4

@@ -1,8 +1,8 @@
-# YOLOv26 Experiment 1: Baseline (Updated to match YOLOv8 exp1 settings)
+# YOLOv26 Experiment 1: Baseline
 task: obb
 mode: train
 model: yolov26n-obb.pt
-data: dataset/ultradata/data.yaml
+data: dataset/processed/data.yaml
 epochs: 50
 patience: 10
 batch: 4

@@ -43,19 +43,13 @@ class BaseDetectionModel(ABC):
     def predict(self, image: np.ndarray, conf: float = None) -> List[Dict[str, Any]]:
         """
         تنفيذ الـ Detection على صورة معينة.
-        
-        Args:
-            image: الصورة كـ NumPy array (BGR format من OpenCV)
-            conf: الحد الأدنى للثقة (اختياري، إذا لم يتم تمريره يستخدم conf_threshold الخاص بالموديل)
-            
-        Returns:
-            قائمة من النتائج، كل نتيجة عبارة عن dict فيه:
-            {
-                'class_id': int,        # رقم الكلاس
-                'class_name': str,      # اسم الكلاس
-                'confidence': float,    # نسبة الثقة (0.0 - 1.0)
-                'bbox': list            # إحداثيات الصندوق [x1, y1, x2, y2]
-            }
+        """
+        pass
+
+    @abstractmethod
+    def track(self, image: np.ndarray, conf: float = None) -> List[Dict[str, Any]]:
+        """
+        تنفيذ الـ Detection مع التتبع (Tracking) المستمر (للفيديو).
         """
         pass
 
