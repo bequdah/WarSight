@@ -9,6 +9,7 @@ YOLOv26 Wrapper - "المترجم" الخاص بـ YOLOv26
 """
 
 import numpy as np
+import cv2
 from typing import List, Dict, Any
 import sys
 import os
@@ -60,10 +61,16 @@ class YOLOv26Detector(BaseDetectionModel):
 
         threshold = conf if conf is not None else self.conf_threshold
         
-        if track:
-            results = self.model.track(image, conf=threshold, persist=True, verbose=False)
+        # تصحيح مساحة الألوان: YOLOv26 يتوقع BGR إذا تم تمرير numpy array (نفس طريقة Colab/cv2)
+        if len(image.shape) == 3 and image.shape[2] == 3:
+            model_image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
         else:
-            results = self.model(image, conf=threshold, verbose=False)
+            model_image = image
+        
+        if track:
+            results = self.model.track(model_image, conf=threshold, persist=True, verbose=False)
+        else:
+            results = self.model(model_image, conf=threshold, verbose=False)
 
         detections = []
         for result in results:
