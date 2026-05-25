@@ -92,8 +92,10 @@ The system includes a modern FastAPI-powered interface:
 
 ## 📷 Detection Showcase
 
-### 📹 Video Demo
-<video src="docs/10.webm" controls width="100%"></video>
+### 🎬 Detection Demo
+<p align="center">
+  <img src="docs/10.gif" width="100%" />
+</p>
 
 ### 🖼️ Test Inference Images
 <p align="center">
