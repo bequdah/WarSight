@@ -90,6 +90,26 @@ The system includes a modern FastAPI-powered interface:
 
 ---
 
+## 📷 Detection Showcase
+
+### 📹 Video Demo
+<video src="docs/10.webm" controls width="100%"></video>
+
+### 🖼️ Test Inference Images
+<p align="center">
+  <img src="docs/1.jpg" width="49%" />
+  <img src="docs/2.jpg" width="49%" />
+</p>
+
+---
+
+## 📦 Dataset Source
+
+The training data was sourced from Roboflow Universe:
+[Instance Segmentation v2.0 – Roboflow](https://universe.roboflow.com/thesis-m2-wic-by-abdelatif-boukabrine/instance-segmentation-v2-0)
+
+---
+
 ## 👥 Research Team
 - **Mohammad Qudah**
 - **Hala Al-Smadi**

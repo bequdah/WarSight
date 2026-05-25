@@ -83,11 +83,6 @@ annotated_image = processor.draw_detections(image, detections)
 json_results = processor.to_json(detections)
 ```
 
-## 📦 Dataset Source
-
-The training data was sourced from Roboflow Universe:
-[Instance Segmentation v2.0 – Roboflow](https://universe.roboflow.com/thesis-m2-wic-by-abdelatif-boukabrine/instance-segmentation-v2-0)
-
 ## 🔑 Key Principle
 
 > **"The models folder abstracts different YOLO implementations into a unified interface for consistent usage across the system."**
