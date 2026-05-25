@@ -18,7 +18,7 @@
 ## 📂 Project Architecture
 
 ```text
-CV/
+warsight/
 ├── app/                  → FastAPI Tactical Dashboard (Web UI)
 ├── configs/              → Experiment YAMLs (YOLOv8 & YOLOv26)
 ├── dataset/              → Raw & Processed (Ultra) Data (Git Ignored)
