@@ -1,0 +1,37 @@
+# Python cache
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+
+# Local environments
+.env
+.env.*
+venv/
+.venv/
+env/
+.env/
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Git files
+.git
+.gitignore
+
+# Data engineering / Raw datasets (Huge files)
+dataset/
+dataset_raw/
+*.zip
+*.tar.gz
+*.tgz
+
+# Results other than weights (optional, but keeps build light)
+# We need best.pt, but we can ignore large raw evaluation logs or cache if any
+evaluation/runs/
+training/runs/
+runs/
+.pytest_cache/

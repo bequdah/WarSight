@@ -21,6 +21,13 @@ from models.custom.post_processor import PostProcessor
 
 # إنشاء مجلد للمخرجات في مجلد النظام المؤقت (لمنع ازدحام مجلد المشروع)
 OUTPUT_DIR = os.path.join(tempfile.gettempdir(), "warsight_temp_outputs")
+if os.path.exists(OUTPUT_DIR):
+    import shutil
+    try:
+        shutil.rmtree(OUTPUT_DIR)
+        print(f"[CLEANUP] Cleared output directory: {OUTPUT_DIR}")
+    except Exception as e:
+        print(f"[CLEANUP ERROR] Failed to clear output directory: {e}")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 app = FastAPI(title="WarSight Tactical System")
@@ -53,7 +60,7 @@ def get_tactical_model():
 
 @app.get("/", response_class=HTMLResponse)
 async def read_index(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    return templates.TemplateResponse(request=request, name="index.html")
 
 @app.post("/generate-xai")
 async def generate_xai(image: UploadFile = File(...)):
@@ -211,6 +218,20 @@ def process_video_task(input_path, output_path, session_id, confidence, thermal_
         video_progress[session_id] = 100
         print(f"\n[DONE] Session {session_id} completed.")
         
+        # Delete output video after a 120 second delay to make it temporary like images
+        import threading
+        import time
+        def delayed_delete(path):
+            time.sleep(120)
+            try:
+                if os.path.exists(path):
+                    os.unlink(path)
+                    print(f"[CLEANUP] Deleted processed video: {path}")
+            except Exception as e:
+                print(f"[CLEANUP ERROR] Failed to delete {path}: {e}")
+                
+        threading.Thread(target=delayed_delete, args=(output_path,), daemon=True).start()
+        
     except Exception as e:
         print(f"[CRITICAL] Background Task Error: {e}")
         video_progress[session_id] = -1
@@ -259,4 +280,6 @@ async def get_video_status(session_id: str):
     return {"percent": video_progress.get(session_id, 0)}
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="127.0.0.1", port=5000)
+    host = os.environ.get("HOST", "127.0.0.1")
+    port = int(os.environ.get("PORT", 5000))
+    uvicorn.run(app, host=host, port=port)
