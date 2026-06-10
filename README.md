@@ -1,6 +1,8 @@
 # 🦅 WarSight: Tactical Object Detection System
 ### High-Fidelity OBB Detection for Military & Drone Reconnaissance
 
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Azure-0078D4?style=for-the-badge&logo=microsoftazure)](https://warsight.gentledesert-3c5a597c.germanywestcentral.azurecontainerapps.io/)
+
 **WarSight** is a production-grade AI research project focused on **Oriented Bounding Box (OBB)** detection for tactical assets. Built on a unified abstraction layer supporting **YOLOv8** and **YOLOv26**, the system integrates a sophisticated data engineering pipeline and an interactive Tactical Dashboard.
 
 ---
@@ -105,6 +107,47 @@ The system includes a modern FastAPI-powered interface:
 
 ---
 
+## 🚀 Live Deployment
+
+WarSight is deployed on **Azure Container Apps** and accessible at:
+
+🔗 **[https://warsight.gentledesert-3c5a597c.germanywestcentral.azurecontainerapps.io](https://warsight.gentledesert-3c5a597c.germanywestcentral.azurecontainerapps.io/)**
+
+### Deployment Stack
+| Layer | Technology |
+| :--- | :--- |
+| Containerization | Docker |
+| Container Registry | Docker Hub (`vzqudah/warsight`) |
+| Cloud Platform | Microsoft Azure (Azure for Students) |
+| Hosting Service | Azure Container Apps |
+| Region | Germany West Central |
+
+### Deploy it Yourself
+
+1. **Build the Docker image**:
+   ```bash
+   docker build -t warsight .
+   docker run -p 5000:5000 warsight
+   ```
+
+2. **Push to Docker Hub**:
+   ```bash
+   docker tag warsight YOUR_USERNAME/warsight:latest
+   docker push YOUR_USERNAME/warsight:latest
+   ```
+
+3. **Deploy to Azure**:
+   ```bash
+   az login
+   az group create --name warsight-rg --location eastus2
+   az provider register -n Microsoft.App --wait
+   az containerapp up --name warsight --resource-group warsight-rg \
+     --image YOUR_USERNAME/warsight:latest \
+     --target-port 5000 --ingress external
+   ```
+
+---
+
 ## 📦 Dataset Source
 
 The training data was sourced from Roboflow Universe:
@@ -120,4 +163,3 @@ The training data was sourced from Roboflow Universe:
 
 **Jordan University of Science and Technology (JUST)**  
 *Computer Vision Specialist Focus — High-Fidelity Tactical Training Data & OBB Optimization.*
-
